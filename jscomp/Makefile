@@ -6,7 +6,7 @@ ifndef EXE
 endif
 NATIVE=ocamlopt.opt$(EXE)
 BYTE=ocamlc.opt$(EXE)
-
+MENHIR=menhir
 CAMLP4OF=camlp4of
 ## native plugin was not installed in opam..
 
@@ -18,6 +18,10 @@ js_map.ml:js_map.mlp j.ml
 js_fold.ml:js_fold.mlp j.ml
 	@echo "Regenrating j_fold.ml"
 	$(CAMLP4OF) -filter Camlp4FoldGenerator  -filter trash -impl $< -printer o -o $@
+
+bs_cpp_parser.ml bs_cpp_parser.mli:bs_cpp_parser.menhir.mly
+	@echo "Regenerating bs_cpp_parser.ml"
+	$(MENHIR) --external-tokens Parser $<  --base bs_cpp_parser
 
 # lam_map.ml: lambda_map.mlp lambda.mlp
 # 	@echo "Regenrating lambda_map.ml"

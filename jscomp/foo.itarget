@@ -8,3 +8,7 @@ bspack_main.cmx
 jsoo_main.cmo
 js_generate_require.cmo
 js_pack.cmo
+bs_cpp.cmo
+bs_cpp_eval.cmo
+bs_cpp_parser.cmo
+
