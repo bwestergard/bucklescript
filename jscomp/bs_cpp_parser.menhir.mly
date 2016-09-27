@@ -64,6 +64,7 @@ let mkinfix l name r  : Bs_cpp.t =
 %token LPAREN 
 %token RPAREN
 %token GREATER
+%token <string * string option> STRING
 %token <int64> INT64
 %token <int> INT
 %right    BARBAR                     /* expr (e || e || e) */
@@ -85,6 +86,7 @@ expr:
 | f = FLOAT { Float f }
 | i = INT64 {Int64 i}
 | i = INT {Int64 (Int64.of_int i)}
+| i = STRING {String (fst i) }
 | LPAREN ;  e = expr;  RPAREN
     { e }
 | l = expr;  op =  INFIXOP0;  r = expr

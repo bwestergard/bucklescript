@@ -36,10 +36,10 @@ type value =
   | Bool of bool 
   | Float of float 
   | Int64 of int64
-  | Version of string 
+  | String of string 
 
 let built_in = 
-  ["ocaml_version", Version Sys.ocaml_version;
+  ["ocaml_version", String Sys.ocaml_version;
    "ocaml_major", Int64 4L;
    "ocaml_minor", Int64 2L;
    "ocaml_patch",  Int64 3L;
@@ -51,12 +51,50 @@ let query str =
   | "false" -> Bool false 
   | v -> 
     (try Float (float_of_string v ) 
-    with  _ -> Version v )
+    with  _ -> String v )
   | exception _ -> 
     try List.assoc str built_in 
     with Not_found -> invalid_arg ("Unbound value " ^ str)
 
 exception Type_error
+
+(** copied from {!Ext_string} *)
+let starts_with s beg = 
+  let beg_len = String.length beg in
+  let s_len = String.length s in
+   beg_len <=  s_len &&
+  (let i = ref 0 in
+    while !i <  beg_len 
+          && String.unsafe_get s !i =
+             String.unsafe_get beg !i do 
+      incr i 
+    done;
+    !i = beg_len
+  )
+
+let _is_sub ~sub i s j ~len =
+  let rec check k =
+    if k = len
+    then true
+    else 
+      String.unsafe_get sub (i+k) = 
+      String.unsafe_get s (j+k) && check (k+1)
+  in
+  j+len <= String.length s && check 0
+
+
+let find ?(start=0) ~sub s =
+  let n = String.length sub in
+  let i = ref start in
+  let module M = struct exception Exit end  in
+  try
+    while !i + n <= String.length s do
+      if _is_sub ~sub 0 s !i ~len:n then raise M.Exit;
+      incr i
+    done;
+    -1
+  with M.Exit ->
+    !i
 
 let eval  (x : Bs_cpp.t) : bool = 
   let rec aux (x : Bs_cpp.t) = 
@@ -64,6 +102,7 @@ let eval  (x : Bs_cpp.t) : bool =
     | Lident x -> query x 
     | Float s -> Float (float_of_string s)
     | Int64 i64 -> Int64 i64
+    | String s -> String s
     | Bin (s,l,r) -> 
       begin match s, aux l, aux r with 
       | ">", Float a, Float b  ->  Bool (a > b )
@@ -78,12 +117,17 @@ let eval  (x : Bs_cpp.t) : bool =
       | "<=", Int64 a , Int64 b -> Bool (a <= b)
       | "==", Int64 a , Int64 b -> Bool (a = b) 
 
-      | ">", Version a, Version b  ->  Bool (a > b )
-      | ">=", Version a, Version b -> Bool ( a>= b)
-      | "<", Version a , Version b -> Bool (a < b )
-      | "<=", Version a , Version b -> Bool (a <= b)
-      | "==", Version a , Version b -> Bool (a = b) 
-
+      | ">", String a, String b  ->  Bool (a > b )
+      | ">=", String a, String b -> Bool ( a>= b)
+      | "<", String a , String b -> Bool (a < b )
+      | "<=", String a , String b -> Bool (a <= b)
+      | "==", String a , String b -> Bool (a = b) 
+      | "==~", String a, String b ->
+        (* [a] starts with [b] *)
+        Bool (starts_with a b)
+      | "=~~", String a, String b ->
+        (* [b] is a substring of [a] *)
+        Bool (find ~sub:b a >= 0)
       | "==", Bool a , Bool b -> Bool (a = b) 
 
       | "&&", Bool a, Bool b -> Bool (a && b)

@@ -27,6 +27,7 @@ type t =
   | Lident of string
   | Float of string
   | Int64 of int64 
+  | String of string 
   | Bin of binop * t * t 
   | Neg of t 
 
