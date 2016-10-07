@@ -47,6 +47,9 @@
   "author": {
     "name": "Hongbo Zhang"
   },
+  "bin" : {
+    "bsc" : "./bin/bsc.exe"
+  },
   "maintainers": [
     {
       "name": "hongbo_zhang",
